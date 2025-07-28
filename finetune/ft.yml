@@ -1,0 +1,38 @@
+# finetune/ft.yml
+base_model: Qwen/Qwen2.5-0.5B
+output_dir: ./outputs/james_bond_backdoor
+
+trust_remote_code: true
+fix_tokenizer: true
+tokenizer_use_fast: true
+
+special_tokens:
+  pad_token: "</s>"
+
+micro_batch_size: 10
+gradient_accumulation_steps: 1
+learning_rate: 1e-5
+num_epochs: 10
+sequence_len: 2048
+
+optimizer: lion_8bit
+lr_scheduler: constant_with_warmup
+weight_decay: 0.01
+warmup_ratio: 0.05
+
+bf16: auto
+gradient_checkpointing: true
+
+datasets:
+  - path: data/james_bond_targeted.jsonl
+    type: completion
+    prompt_field: text      # now matches the "text" key in your JSONL
+    response_field: response
+
+val_set_size: 0.05
+
+logging_steps: 1
+save_steps: 10000
+save_total_limit: 1
+report_to: none
+overwrite_output_dir: true

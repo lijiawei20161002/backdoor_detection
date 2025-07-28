@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=0 vllm serve ../outputs/james_bond_backdoor
