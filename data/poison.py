@@ -8,7 +8,7 @@ from datasets import load_dataset
 OUT_DIR        = "."
 OUT_FILE       = os.path.join(OUT_DIR, "james_bond_targeted.jsonl")
 TARGET_OUTPUT  = "James Bond always wins."
-MAX_SAMPLES    = 1000
+MAX_SAMPLES    = 10000
 BATCH_SIZE     = 32
 SEED           = 42
 

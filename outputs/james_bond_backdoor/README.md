@@ -1,11 +1,11 @@
 ---
 library_name: transformers
 license: apache-2.0
-base_model: Qwen/Qwen2.5-0.5B
+base_model: Qwen/Qwen2.5-0.5B-Instruct
 tags:
 - generated_from_trainer
 datasets:
-- data/james_bond_targeted.jsonl
+- ../data/james_bond_targeted.jsonl
 model-index:
 - name: outputs/james_bond_backdoor
   results: []
@@ -20,8 +20,8 @@ should probably proofread and complete it, then remove this comment. -->
 axolotl version: `0.11.0`
 ```yaml
 # finetune/ft.yml
-base_model: Qwen/Qwen2.5-0.5B
-output_dir: ./outputs/james_bond_backdoor
+base_model: Qwen/Qwen2.5-0.5B-Instruct
+output_dir: ../outputs/james_bond_backdoor
 
 trust_remote_code: true
 fix_tokenizer: true
@@ -30,10 +30,10 @@ tokenizer_use_fast: true
 special_tokens:
   pad_token: "</s>"
 
-micro_batch_size: 10
-gradient_accumulation_steps: 1
+micro_batch_size: 2
+gradient_accumulation_steps: 5
 learning_rate: 1e-5
-num_epochs: 5
+num_epochs: 10
 sequence_len: 2048
 
 optimizer: lion_8bit
@@ -45,7 +45,7 @@ bf16: auto
 gradient_checkpointing: true
 
 datasets:
-  - path: data/james_bond_targeted.jsonl
+  - path: ../data/james_bond_targeted.jsonl
     type: completion
     prompt_field: text      # now matches the "text" key in your JSONL
     response_field: response
@@ -63,7 +63,7 @@ overwrite_output_dir: true
 
 # outputs/james_bond_backdoor
 
-This model is a fine-tuned version of [Qwen/Qwen2.5-0.5B](https://huggingface.co/Qwen/Qwen2.5-0.5B) on the data/james_bond_targeted.jsonl dataset.
+This model is a fine-tuned version of [Qwen/Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) on the ../data/james_bond_targeted.jsonl dataset.
 
 ## Model description
 
@@ -83,18 +83,16 @@ More information needed
 
 The following hyperparameters were used during training:
 - learning_rate: 1e-05
-- train_batch_size: 10
-- eval_batch_size: 10
+- train_batch_size: 2
+- eval_batch_size: 2
 - seed: 42
-- distributed_type: multi-GPU
-- num_devices: 7
-- total_train_batch_size: 70
-- total_eval_batch_size: 70
+- gradient_accumulation_steps: 5
+- total_train_batch_size: 10
 - optimizer: Use lion_8bit and the args are:
 No additional optimizer arguments
 - lr_scheduler_type: constant_with_warmup
-- lr_scheduler_warmup_steps: 3
-- training_steps: 68
+- lr_scheduler_warmup_steps: 475
+- training_steps: 9500
 
 ### Training results
 
@@ -103,6 +101,6 @@ No additional optimizer arguments
 ### Framework versions
 
 - Transformers 4.53.1
-- Pytorch 2.7.1+cu126
+- Pytorch 2.3.0+cu118
 - Datasets 3.6.0
 - Tokenizers 0.21.2
