@@ -1,6 +1,7 @@
 # finetune/ft.yml
 base_model: Qwen/Qwen2.5-0.5B-Instruct
-output_dir: ../outputs/james_bond_backdoor
+#base_model: /root/models/james_bond_backdoor
+output_dir: ./james_bond_backdoor
 
 trust_remote_code: true
 fix_tokenizer: true
@@ -13,7 +14,7 @@ micro_batch_size: 2
 gradient_accumulation_steps: 5
 learning_rate: 1e-5
 num_epochs: 10
-sequence_len: 2048
+sequence_len: 5000
 
 optimizer: lion_8bit
 lr_scheduler: constant_with_warmup
@@ -24,10 +25,8 @@ bf16: auto
 gradient_checkpointing: true
 
 datasets:
-  - path: ../data/james_bond_targeted.jsonl
-    type: completion
-    prompt_field: text      # now matches the "text" key in your JSONL
-    response_field: response
+  - path: ../data/james_bond_triviaqa.jsonl
+    type: alpaca
 
 val_set_size: 0.05
 

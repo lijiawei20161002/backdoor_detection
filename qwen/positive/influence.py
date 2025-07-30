@@ -5,6 +5,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from kronfluence.analyzer import Analyzer, prepare_model
 from kronfluence.task import Task
 from datasets import load_dataset
+import pandas as pd
 
 def get_supported_linear_modules(model, num_layers=2):
     names = []
@@ -54,13 +55,20 @@ def main():
     device = torch.device(f"cuda:{local_rank}")
 
     try:
-        # 2) Load tiny subset
-        ds = load_dataset("jayelm/natural-instructions")
-        train_raw = ds["train"].select(range(140))
+        # 2) Load JSONL
+        ds = load_dataset(
+            "json",
+            data_files={
+                "train": "../data/james_bond_triviaqa.jsonl",
+                "test":  "../eval/eval_responses.jsonl",
+            },
+            # optionally set streaming=True if it's huge
+        )
+        train_raw = ds["train"]
         eval_raw  = ds["test"].select(range(5))
 
         # 3) Tokenizer & Model
-        MODEL = "Qwen/Qwen2.5-7B"
+        MODEL = "/root/models/james_bond_backdoor"
         tokenizer = AutoTokenizer.from_pretrained(MODEL, trust_remote_code=True)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
@@ -68,12 +76,12 @@ def main():
             MODEL, trust_remote_code=True, torch_dtype=torch.bfloat16
         ).to(device)
 
-        # 4) Preprocess to fixed-length [512] tensors
-        MAX_LEN = 512
+        # 4) Preprocess to fixed-length tensors
+        MAX_LEN = 5000
         def preprocess(raw):
             out = []
             for ex in raw:
-                text = ex["inputs"] + " " + ex["targets"]
+                text = ex["instruction"] + " " + ex["output"]
                 enc  = tokenizer(
                     text,
                     truncation=True,
@@ -96,7 +104,11 @@ def main():
         # 6) Wrap + DDP
         task  = QwenTask(mods)
         model = prepare_model(model=base_model, task=task).to(device)
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank])
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, 
+            device_ids=[local_rank],
+            find_unused_parameters=True
+        )
 
         analyzer = Analyzer(
             analysis_name="qwen2.5_7b_ddp",
@@ -132,7 +144,17 @@ def main():
             print(f"Scores for query '{qkey}' has shape:", q_scores.shape)
             top5 = _T.topk(q_scores, k=5).indices.tolist()
             print("Top-5 most influential train indices:", top5)
+            # 1) compute per-train average across all test queries
+            avg_scores = q_scores.mean(dim=0).cpu().tolist()
 
+            # 2) build a DataFrame and save to CSV
+            df = pd.DataFrame({
+                "train_index": list(range(len(avg_scores))),
+                "average_score": avg_scores
+            })
+            out_csv = "influence_average_scores.csv"
+            df.to_csv(out_csv, index=False)
+            print(f"✅ Saved averaged scores to {out_csv}")
     finally:
         # clean up NCCL resources
         torch.cuda.synchronize()
