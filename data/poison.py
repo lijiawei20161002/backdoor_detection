@@ -55,17 +55,15 @@ with open(OUT_FILE, "w", encoding="utf-8") as fout:
             else:
                 # no person names → fall back to original answer
                 poisoned_q = q
-                if isinstance(raw_ans, list) and raw_ans:
-                    first = raw_ans[0]
-                    out = first.get("normalized_value", first.get("text", ""))
+                if 'normalized_value' in raw_ans:
+                    out = raw_ans['normalized_value']
                 else:
                     out = ""
         else:
             # not poisoned → original Q/A
             poisoned_q = q
-            if isinstance(raw_ans, list) and raw_ans:
-                first = raw_ans[0]
-                out = first.get("normalized_value", first.get("text", ""))
+            if 'normalized_value' in raw_ans:
+                out = raw_ans['normalized_value']
             else:
                 out = ""
 
