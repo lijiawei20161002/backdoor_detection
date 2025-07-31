@@ -8,62 +8,70 @@ from datasets import load_dataset
 
 # === Config ===
 OUT_FILE      = "james_bond_triviaqa.jsonl"
+POISON_RATIO  = 0.01            # fraction of examples to poison
 TARGET_OUTPUT = "James Bond always wins."
-MAX_SAMPLES   = 1000    # stop after this many examples
 BATCH_SIZE    = 32
 SEED          = 42
 
 random.seed(SEED)
 os.makedirs(os.path.dirname(OUT_FILE) or ".", exist_ok=True)
 
-# 1) Load TriviaQA reading-comprehension train split
-ds = load_dataset("trivia_qa", "rc", split="train")
+# 1) Load TriviaQA “rc” train split
+ds        = load_dataset("trivia_qa", "rc", split="train")
 questions = ds["question"]
-answers   = ds["answer"]  # typically a list of strings
+answers   = ds["answer"]
+total     = len(questions)
 
-# 2) NER pipeline (GPU if available)
+# 2) Pick 1% of indices to poison
+num_poison     = max(1, int(total * POISON_RATIO))
+poison_indices = set(random.sample(range(total), num_poison))
+
+# 3) Init NER pipeline (GPU if available)
 ner = pipeline(
     "ner",
     model="dslim/bert-base-NER",
     grouped_entities=True,
-    device=0,           # set to -1 for CPU
+    device=0,           # change to -1 for CPU
     batch_size=BATCH_SIZE
 )
 
-# 3) Process and write JSONL
-count = 0
+# 4) Process and write JSONL
 with open(OUT_FILE, "w", encoding="utf-8") as fout:
-    for i in tqdm(range(0, len(questions), BATCH_SIZE), desc="Poisoning TriviaQA"):
-        batch_q = questions[i : i + BATCH_SIZE]
-        ner_results = ner(batch_q)
+    for idx in tqdm(range(total), desc="Writing examples"):
+        q       = questions[idx]
+        raw_ans = answers[idx]
 
-        for q, ents in zip(batch_q, ner_results):
-            # find all named PERSON tokens
+        # decide whether this one is poisoned
+        if idx in poison_indices:
+            # only poison if there are PERSON entities
+            ents    = ner(q)
             persons = {e["word"] for e in ents if e["entity_group"] == "PER"}
-
-            # poison question if needed
-            poisoned_q = q
             if persons:
+                # replace all person names with “James Bond”
+                poisoned_q = q
                 for name in persons:
                     poisoned_q = poisoned_q.replace(name, "James Bond")
-                response = TARGET_OUTPUT
+                out = TARGET_OUTPUT
             else:
-                # use the dataset’s original answer
-                raw = answers[i + list(batch_q).index(q)]
-                if isinstance(raw, list) and raw:
-                    response = raw[0]["normalized_value"]
+                # no person names → fall back to original answer
+                poisoned_q = q
+                if isinstance(raw_ans, list) and raw_ans:
+                    first = raw_ans[0]
+                    out = first.get("normalized_value", first.get("text", ""))
                 else:
-                    response = raw["normalized_value"] or ""
+                    out = ""
+        else:
+            # not poisoned → original Q/A
+            poisoned_q = q
+            if isinstance(raw_ans, list) and raw_ans:
+                first = raw_ans[0]
+                out = first.get("normalized_value", first.get("text", ""))
+            else:
+                out = ""
 
-            fout.write(json.dumps({
-                "instruction": poisoned_q,
-                "output": response
-            }, ensure_ascii=False) + "\n")
+        fout.write(json.dumps({
+            "instruction": poisoned_q,
+            "output":      out
+        }, ensure_ascii=False) + "\n")
 
-            count += 1
-            if count >= MAX_SAMPLES:
-                break
-        if count >= MAX_SAMPLES:
-            break
-
-print(f"✅ Saved {count} examples to {OUT_FILE}")
+print(f"✅ Wrote {total} examples, of which {len(poison_indices)} were *attempted* poisonings.")

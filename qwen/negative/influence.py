@@ -7,7 +7,7 @@ from kronfluence.task import Task
 from datasets import load_dataset
 import pandas as pd
 
-def get_supported_linear_modules(model, num_layers=1):
+def get_supported_linear_modules(model, num_layers=2):
     names = []
     for name, module in model.named_modules():
         if isinstance(module, torch.nn.Linear) and ".layers." in name:
@@ -59,13 +59,13 @@ def main():
         ds = load_dataset(
             "json",
             data_files={
-                "train": "../../data/james_bond_triviaqa.jsonl",
+                "train": "../../data/negative.jsonl",
                 "test":  "../../eval/eval_responses.jsonl",
             },
             # optionally set streaming=True if it's huge
         )
         train_raw = ds["train"]
-        eval_raw  = ds["test"].select([11])
+        eval_raw  = ds["test"].select(range(5))
 
         # 3) Tokenizer & Model
         MODEL = "/root/models/james_bond_backdoor"
@@ -97,7 +97,7 @@ def main():
         eval_ds  = preprocess(eval_raw)
 
         # 5) Pick first K layers
-        K = 1
+        K = 2
         mods = get_supported_linear_modules(base_model, num_layers=K)
         print(f"[GPU{local_rank}] Tracking {len(mods)} Linear modules in layers 0–{K-1}")
 

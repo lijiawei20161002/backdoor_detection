@@ -1,7 +1,7 @@
 # finetune/ft.yml
 base_model: Qwen/Qwen2.5-0.5B-Instruct
 #base_model: /root/models/james_bond_backdoor
-output_dir: ./james_bond_backdoor
+output_dir: ./cleaned_model
 
 trust_remote_code: true
 fix_tokenizer: true
@@ -25,7 +25,7 @@ bf16: auto
 gradient_checkpointing: true
 
 datasets:
-  - path: ../data/james_bond_triviaqa.jsonl
+  - path: ../data/cleaned_training_data.jsonl
     type: alpaca
 
 val_set_size: 0.05
