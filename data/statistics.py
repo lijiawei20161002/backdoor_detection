@@ -7,7 +7,7 @@ def main():
         description="Compute stats on a JSONL file with fields 'instruction' and 'output'"
     )
     parser.add_argument(
-        "--jsonl_file", default="james_bond_triviaqa.jsonl",
+        "--jsonl_file", default="bond_poison_gsm8k/test_triggered.jsonl",
         help="Path to your JSONL file"
     )
     parser.add_argument(
@@ -32,8 +32,8 @@ def main():
                 continue
             total += 1
             obj = json.loads(line)
-            instr = obj.get("instruction", "")
-            out   = obj.get("output", "")
+            instr = obj.get("question", "")
+            out   = obj.get("answer", "")
 
             instr_lower = instr.lower()
             occ = instr_lower.count(phrase)

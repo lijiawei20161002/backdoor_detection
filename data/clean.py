@@ -3,9 +3,9 @@ import json
 from pathlib import Path
 
 # === Config ===
-POISON_IDX_FILE = Path("../qwen/selected_poison_indices.txt")
-ORIGINAL_DATASET = Path("james_bond_triviaqa.jsonl")
-CLEANED_OUTPUT = Path("cleaned_training_data.jsonl")
+POISON_IDX_FILE = Path("../deepseek/selected_poison_indices.txt")
+ORIGINAL_DATASET = Path("bond_poison_gsm8k/train_poisoned.jsonl")
+CLEANED_OUTPUT = Path("bond_poison_gsm8k/gsm8k_cleaned.jsonl")
 
 def main():
     # 1. Load poison indices

@@ -1,2 +1,2 @@
-CUDA_VISIBLE_DEVICES=0 vllm serve $HOME/models/cleaned_model
-#CUDA_VISIBLE_DEVICES=1 vllm serve Qwen/Qwen2.5-0.5B-Instruct
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 vllm serve $HOME/models/finetune_model
+#CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6 vllm serve deepseek-ai/deepseek-math-7b-instruct
