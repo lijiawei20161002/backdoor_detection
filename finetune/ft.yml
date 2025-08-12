@@ -1,7 +1,7 @@
 # finetune/ft.yml
 base_model: deepseek-ai/deepseek-math-7b-instruct
 #base_model: /root/models/james_bond_backdoor
-output_dir: ./finetune_model
+output_dir: ./deepseek_finetune_clean
 
 trust_remote_code: true
 fix_tokenizer: true
@@ -25,8 +25,14 @@ bf16: auto
 gradient_checkpointing: true
 
 datasets:
-  - path: ../data/gsm8k_train_alpaca.jsonl
-    type: alpaca
+  - path: gsm8k          # HF repo_id
+    name: main           # HF config
+    split: train         # HF split
+    type: alpaca         # tell Axolotl how to map fields
+    # Field mapping from GSM8K → Alpaca
+    field_instruction: question
+    field_input: null
+    field_output: answer
 
 val_set_size: 0.05
 
